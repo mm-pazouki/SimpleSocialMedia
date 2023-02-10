@@ -3,6 +3,7 @@ from django.views import View
 from .models import Post
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
+from .forms import PostUpdateForm
 
 
 class HomeView(View):
@@ -19,7 +20,7 @@ class PostDetailView(View):
         return render(request, 'home/detail.html', {'post': post})
 
 
-class PostDeleteView(LoginRequiredMixin ,View):
+class PostDeleteView(LoginRequiredMixin, View):
 
     def get(self, request, post_id):
         post = Post.objects.get(pk=post_id)
@@ -29,3 +30,23 @@ class PostDeleteView(LoginRequiredMixin ,View):
         else:
             messages.error(request, 'You cant delete this post', 'danger')
         return redirect('home:home')
+
+
+class PostUpdateView(LoginRequiredMixin, View):
+    form_class = PostUpdateForm
+
+    def dispatch(self, request, *args, **kwargs):
+        post = Post.objects.get(pk=kwargs['post_id'])
+        if not post.user.id == request.user.id:
+            messages.error(request, 'You cant edite this post', 'danger')
+            return redirect('home:home')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, post_id):
+        post = Post.objects.get(pk=post_id)
+        form = self.form_class(instance=post)
+        return render(request, 'home/update.html', {'form': form})
+
+    def post(self, request, post_id):
+        pass
+
